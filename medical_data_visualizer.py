@@ -1,4 +1,3 @@
-import abc
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -26,50 +25,53 @@ def draw_cat_plot():
     df_cat = df.drop(columns=['id','age','sex','height','weight','ap_hi','ap_lo', 'BMI'])
     df_cat = df_cat.melt(id_vars='cardio') #id_vars=['cholesterol', 'gluc', 'smoke', 'alco', 'active', 'overweight']
     
-
-
     # Group and reformat the data to split it by 'cardio'. Show the counts of each feature. You will have to rename one of the columns for the catplot to work correctly.
     df_cat = df_cat.sort_values(by='cardio')
-    df_cardio_0 = df_cat[df_cat['cardio']==0]
-    df_cardio_1 = df_cat[df_cat['cardio']==1]
-
 
     # Draw the catplot with 'sns.catplot()'
-    
-    fig = sns.catplot(x='variable', hue = 'value', data=df_cardio_0, kind='count',  
-                order= ['active','alco','cholesterol','gluc','overweight','smoke']
-                )
-    
-    fig = sns.catplot(x='variable', hue = 'value', data=df_cardio_1, kind='count',  
-                order= ['active','alco','cholesterol','gluc','overweight','smoke']
-                )
 
+    fig = sns.catplot(x='variable', hue = 'value', data=df_cat, kind='count', col = 'cardio',  
+                order= ['active','alco','cholesterol','gluc','overweight','smoke'])
+
+    fig.set_ylabels("total")
+
+    fig = fig.figure
 
     # Do not modify the next two lines
     fig.savefig('catplot.png')
     return fig
 
+#print(df.shape)
 
 # Draw Heat Map
-#def draw_heat_map():
+def draw_heat_map():
     # Clean the data
-    #df_heat = None
+    df_heat = df
+    df_heat = df_heat.drop(df_heat[df_heat['ap_lo'] >= df_heat['ap_hi']].index)
+    df_heat = df_heat.drop(df_heat[(df_heat['height'] <= df_heat['height'].quantile(0.025))].index)
+    df_heat = df_heat.drop(df_heat[(df_heat['height'] >= df_heat['height'].quantile(0.975))].index)
+    df_heat = df_heat.drop(df_heat[(df_heat['weight'] <= df_heat['weight'].quantile(0.025))].index)
+    df_heat = df_heat.drop(df_heat[(df_heat['weight'] >= df_heat['weight'].quantile(0.975))].index)
+
 
     # Calculate the correlation matrix
-    #corr = None
+    corr = df_heat.corr()
 
     # Generate a mask for the upper triangle
-    #mask = None
-
-
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
 
     # Set up the matplotlib figure
-    #fig, ax = None
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    sns.set(font_scale=0.6)
 
     # Draw the heatmap with 'sns.heatmap()'
+    fig = sns.heatmap(corr, mask = mask, annot=True, fmt='.1f', center = 0.08, vmax = 0.3, cbar = True, square=True)
 
-
+    
+    fig = fig.figure
 
     # Do not modify the next two lines
-    #fig.savefig('heatmap.png')
-    #return fig
+    fig.figure.savefig('heatmap.png')
+    return fig
