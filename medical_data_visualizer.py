@@ -7,9 +7,10 @@ import numpy as np
 df = pd.read_csv('medical_examination.csv')
 
 # Add 'overweight' column
-df['BMI'] = df['weight'] /( (df['height']/100) * (df['height']/100))
+
+df['BMI'] = df['weight'] /pow( df['height']/100, 2)
 df['overweight'] = 0
-df.loc[df['BMI'] >25, 'overweight'] = 1
+df.loc[df['BMI'] > 25, 'overweight'] = 1
 
 # Normalize data by making 0 always good and 1 always bad. If the value of 'cholesterol' or 'gluc' is 1, make the value 0. If the value is more than 1, make the value 1.
 df.loc[df['cholesterol'] == 1, 'cholesterol'] = 0
@@ -22,7 +23,7 @@ df.loc[df['gluc'] > 1, 'gluc'] = 1
 # Draw Categorical Plot
 def draw_cat_plot():
     # Create DataFrame for cat plot using `pd.melt` using just the values from 'cholesterol', 'gluc', 'smoke', 'alco', 'active', and 'overweight'.
-    df_cat = df.drop(columns=['id','age','sex','height','weight','ap_hi','ap_lo', 'BMI'])
+    df_cat = df.drop(columns=['id','age','sex','height','weight','ap_hi','ap_lo', 'BMI']) #
     df_cat = df_cat.melt(id_vars='cardio') #id_vars=['cholesterol', 'gluc', 'smoke', 'alco', 'active', 'overweight']
     
     # Group and reformat the data to split it by 'cardio'. Show the counts of each feature. You will have to rename one of the columns for the catplot to work correctly.
@@ -45,21 +46,22 @@ def draw_cat_plot():
 
 # Draw Heat Map
 def draw_heat_map():
+    
     # Clean the data
-    df_heat = df
-    df_heat = df_heat.drop(df_heat[df_heat['ap_lo'] >= df_heat['ap_hi']].index)
-    df_heat = df_heat.drop(df_heat[(df_heat['height'] <= df_heat['height'].quantile(0.025))].index)
-    df_heat = df_heat.drop(df_heat[(df_heat['height'] >= df_heat['height'].quantile(0.975))].index)
-    df_heat = df_heat.drop(df_heat[(df_heat['weight'] <= df_heat['weight'].quantile(0.025))].index)
-    df_heat = df_heat.drop(df_heat[(df_heat['weight'] >= df_heat['weight'].quantile(0.975))].index)
+  
+    df_heat = df[(df['ap_lo'] <= df['ap_hi']) & 
+                    (df['height'] >= (df['height'].quantile(0.025))) &
+                    (df['height'] <= (df['height'].quantile(0.975))) &
+                    (df['weight'] >= (df['weight'].quantile(0.025))) &
+                    (df['weight'] <= (df['weight'].quantile(0.975)))]
 
+    df_heat = df_heat.drop(columns = 'BMI')
 
     # Calculate the correlation matrix
     corr = df_heat.corr()
 
     # Generate a mask for the upper triangle
-    mask = np.zeros_like(corr)
-    mask[np.triu_indices_from(mask)] = True
+    mask = np.triu(corr)
 
     # Set up the matplotlib figure
     fig, ax = plt.subplots(figsize=(8, 8))
